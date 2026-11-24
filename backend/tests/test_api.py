@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
 
+from app.config import REPO_ROOT
 from app.exceptions import DatabaseError, ModelUnavailableError, TicketNotFoundError
 from app.main import Services, create_app
 from app.rag import AnswerService
@@ -11,6 +12,7 @@ from app.schemas import AskResponse, Ticket, TicketCreate, TicketUpdate
 from tests.conftest import PTO_CHUNK, FakeEmbeddings, StaticRetriever
 
 NOW = datetime(2026, 11, 24, tzinfo=UTC)
+DOCS_DIR = REPO_ROOT / "data" / "docs"
 
 
 class InMemoryTicketClient:
@@ -58,7 +60,8 @@ def make_client(answer: str = "Up to 5 days [1].", answerer: object | None = Non
         min_score=0.5,
         prompt_version="v1",
     )
-    return TestClient(create_app(Services(answerer=service, tickets=InMemoryTicketClient())))
+    services = Services(answerer=service, tickets=InMemoryTicketClient(), docs_dir=DOCS_DIR)
+    return TestClient(create_app(services))
 
 
 def test_health() -> None:
@@ -126,3 +129,16 @@ def test_create_ticket_validates_priority() -> None:
     )
 
     assert response.status_code == 422
+
+
+def test_get_document_returns_source_text() -> None:
+    response = make_client().get("/documents/hr-pto-policy.md")
+
+    assert response.status_code == 200
+    assert response.json()["title"] == "Paid Time Off Policy"
+    assert "## Carryover" in response.json()["text"]
+
+
+@pytest.mark.parametrize("source", ["missing.md", "..%2F.env", "HR-PTO-POLICY.md", "notes.txt"])
+def test_get_document_rejects_unknown_or_unsafe_names(source: str) -> None:
+    assert make_client().get(f"/documents/{source}").status_code == 404

@@ -13,7 +13,7 @@ ollama pull nomic-embed-text
 docker compose up --build
 ```
 
-The API is at http://localhost:8000/docs, and the MCP ticket server is at http://localhost:8001/mcp.
+Open the chat UI at http://localhost:5173. The API docs are at http://localhost:8000/docs, and the MCP ticket server is at http://localhost:8001/mcp.
 To re-embed the documents, run `docker compose run --rm ingest`.
 
 ## Running tests
@@ -21,4 +21,5 @@ To re-embed the documents, run `docker compose run --rm ingest`.
 ```powershell
 cd backend; py -3.12 -m venv .venv; .venv\Scripts\activate; pip install -e ".[dev]"; pytest
 cd ..\mcp_server; py -3.12 -m venv .venv; .venv\Scripts\activate; pip install -e ".[dev]"; pytest
+cd ..\frontend; npm ci; npm run lint; npm test
 ```

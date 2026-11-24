@@ -28,3 +28,6 @@ Thumbs.db
 
 # Generated evaluation output
 eval/results/
+
+# Local tooling
+.claude/

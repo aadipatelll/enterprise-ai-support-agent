@@ -35,6 +35,12 @@ class AskResponse(BaseModel):
     suggested_ticket: TicketDraft | None = None
 
 
+class Document(BaseModel):
+    source: str
+    title: str
+    text: str
+
+
 class TicketCreate(BaseModel):
     title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=200)]
     description: Annotated[str, StringConstraints(min_length=1, max_length=5000)]

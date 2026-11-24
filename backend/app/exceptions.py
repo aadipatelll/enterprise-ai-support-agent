@@ -23,3 +23,7 @@ class TicketServiceError(SupportAgentError):
 
 class TicketNotFoundError(SupportAgentError):
     """The requested ticket does not exist."""
+
+
+class DocumentNotFoundError(SupportAgentError):
+    """The requested source document does not exist."""

@@ -1,6 +1,7 @@
 """FastAPI application. Run with: uvicorn app.main:create_app --factory"""
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Annotated, Protocol
 
 from fastapi import Depends, FastAPI, Request, status
@@ -9,8 +10,10 @@ from fastapi.responses import JSONResponse
 
 from app.config import Settings, get_settings
 from app.db import create_db_engine, create_session_factory
+from app.documents import read_document
 from app.exceptions import (
     DatabaseError,
+    DocumentNotFoundError,
     ModelUnavailableError,
     SupportAgentError,
     TicketNotFoundError,
@@ -19,7 +22,7 @@ from app.exceptions import (
 from app.providers import build_chat_model, build_embeddings
 from app.rag import AnswerService
 from app.retrieval import PgVectorRetriever
-from app.schemas import AskRequest, AskResponse, Ticket, TicketCreate, TicketUpdate
+from app.schemas import AskRequest, AskResponse, Document, Ticket, TicketCreate, TicketUpdate
 from app.tickets import McpTicketClient, TicketClient
 
 _ERROR_STATUS: dict[type[SupportAgentError], int] = {
@@ -27,6 +30,7 @@ _ERROR_STATUS: dict[type[SupportAgentError], int] = {
     DatabaseError: status.HTTP_503_SERVICE_UNAVAILABLE,
     TicketServiceError: status.HTTP_502_BAD_GATEWAY,
     TicketNotFoundError: status.HTTP_404_NOT_FOUND,
+    DocumentNotFoundError: status.HTTP_404_NOT_FOUND,
 }
 
 
@@ -38,6 +42,7 @@ class Answerer(Protocol):
 class Services:
     answerer: Answerer
     tickets: TicketClient
+    docs_dir: Path
 
 
 def build_services(settings: Settings) -> Services:
@@ -50,7 +55,11 @@ def build_services(settings: Settings) -> Services:
         min_score=settings.min_relevance_score,
         prompt_version=settings.prompt_version,
     )
-    return Services(answerer=answerer, tickets=McpTicketClient(settings.mcp_server_url))
+    return Services(
+        answerer=answerer,
+        tickets=McpTicketClient(settings.mcp_server_url),
+        docs_dir=settings.docs_dir,
+    )
 
 
 def get_services(request: Request) -> Services:
@@ -88,6 +97,11 @@ def register_routes(app: FastAPI) -> None:
     @app.post("/ask")
     def ask(body: AskRequest, services: ServicesDep) -> AskResponse:
         return services.answerer.ask(body.question)
+
+    @app.get("/documents/{source}")
+    def get_document(source: str, services: ServicesDep) -> Document:
+        document = read_document(services.docs_dir, source)
+        return Document(source=document.source, title=document.title, text=document.text)
 
     @app.post("/tickets", status_code=status.HTTP_201_CREATED)
     async def create_ticket(body: TicketCreate, services: ServicesDep) -> Ticket:
