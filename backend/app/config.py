@@ -26,6 +26,13 @@ class Settings(BaseSettings):
     chunk_overlap: int = Field(default=100, ge=0)
     docs_dir: Path = REPO_ROOT / "data" / "docs"
 
+    top_k: int = Field(default=4, gt=0)
+    min_relevance_score: float = Field(default=0.55, ge=-1, le=1)
+    prompt_version: str = "v1"
+
+    mcp_server_url: str = "http://localhost:8001/mcp"
+    cors_origins: list[str] = ["http://localhost:5173"]
+
     @model_validator(mode="after")
     def _overlap_smaller_than_chunk(self) -> Self:
         if self.chunk_overlap >= self.chunk_size:

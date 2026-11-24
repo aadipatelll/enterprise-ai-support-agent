@@ -4,15 +4,21 @@ A RAG agent that answers employee questions from internal company documents and 
 
 > Work in progress. Full documentation is coming soon.
 
-## Quick start (ingestion)
+## Quick start
 
 ```powershell
 copy .env.example .env
-docker compose up -d db
+ollama pull llama3.1:8b
 ollama pull nomic-embed-text
-cd backend
-py -3.12 -m venv .venv; .venv\Scripts\activate
-pip install -e ".[dev]"
-python -m app.ingestion
-pytest
+docker compose up --build
+```
+
+The API is at http://localhost:8000/docs, and the MCP ticket server is at http://localhost:8001/mcp.
+To re-embed the documents, run `docker compose run --rm ingest`.
+
+## Running tests
+
+```powershell
+cd backend; py -3.12 -m venv .venv; .venv\Scripts\activate; pip install -e ".[dev]"; pytest
+cd ..\mcp_server; py -3.12 -m venv .venv; .venv\Scripts\activate; pip install -e ".[dev]"; pytest
 ```

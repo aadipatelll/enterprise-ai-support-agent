@@ -15,3 +15,11 @@ class DatabaseError(SupportAgentError):
 
 class IngestionError(SupportAgentError):
     """Documents could not be turned into stored chunks."""
+
+
+class TicketServiceError(SupportAgentError):
+    """The ticket MCP server is unreachable or rejected the request."""
+
+
+class TicketNotFoundError(SupportAgentError):
+    """The requested ticket does not exist."""

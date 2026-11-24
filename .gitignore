@@ -13,6 +13,7 @@ venv/
 .coverage
 htmlcov/
 *.egg-info/
+*.db
 
 # Node
 node_modules/

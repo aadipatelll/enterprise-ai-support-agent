@@ -6,8 +6,36 @@ from langchain_core.embeddings import Embeddings
 
 from app.ingestion.chunking import Chunk
 from app.ingestion.loader import SourceDocument
+from app.retrieval import RetrievedChunk
 
 EMBEDDING_DIM = 8
+
+PTO_CHUNK = RetrievedChunk(
+    title="Paid Time Off Policy",
+    section="Carryover",
+    source="hr-pto-policy.md",
+    content="Up to 5 unused PTO days carry over into the next calendar year.",
+    score=0.82,
+)
+VPN_CHUNK = RetrievedChunk(
+    title="VPN Access",
+    section="Limits",
+    source="it-vpn-access.md",
+    content="VPN sessions disconnect after 12 hours.",
+    score=0.61,
+)
+
+
+class StaticRetriever:
+    """Returns fixed results and records the requested top_k."""
+
+    def __init__(self, results: list[RetrievedChunk]) -> None:
+        self.results = results
+        self.requested_top_k: int | None = None
+
+    def search(self, query_vector: list[float], top_k: int) -> list[RetrievedChunk]:
+        self.requested_top_k = top_k
+        return self.results[:top_k]
 
 
 class FakeEmbeddings(Embeddings):
